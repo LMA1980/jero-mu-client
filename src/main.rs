@@ -1,86 +1,61 @@
-use iced::{
-    alignment,
-    widget::{button, column, container, row, text, rule},
-    window,
-    Application, Element, Length, Settings, Theme,
+mod about;
+use crate::about::About;
+use std::{
+    error::Error,
+    io::self
 };
-
-pub fn main() -> iced::Result {
-    Jero::run(Settings::default())
-}
-
-#[derive(Default)]
-struct Jero {
-    menu_open: bool,
-}
-
-#[derive(Debug, Clone)]
-enum Message {
-    MenuToggled,
-    Exit,
-}
-
-impl Application for Jero {
-    type Executor = iced::executor::Default;
-    type Message = Message;
-    type Theme = Theme;
-    type Flags = ();
-
-    fn new(_flags: ()) -> (Self, Command<Message>) {
-        (Jero::default(), Command::none())
+use crossterm::{
+    execute,
+    terminal::{
+        self,
+        EnterAlternateScreen,
+        LeaveAlternateScreen,
+        SetTitle
     }
+};
+use ratatui::{backend::CrosstermBackend, Terminal};
+// ---------------------------------------------------------------------------------------------- //
+pub fn main() -> io::Result<()>
+{
+    let mut stdout = io::stdout();
 
-    fn title(&self) -> String {
-        String::from("Jero")
-    }
+    let _ = update_terminal_title(&mut stdout);
 
-    fn update(&mut self, message: Message) -> Command<Message> {
-        match message {
-            Message::MenuToggled => {
-                self.menu_open = !self.menu_open;
-                Command::none()
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+    let about_widget = About::new(None);
+    loop {
+        terminal.draw(|frame| 
+            frame.render_widget(&mut about_widget.clone(), frame.area()))?;
+        // Handle events (e.g., exit on 'q' press)
+        if crossterm::event::poll(std::time::Duration::from_millis(250))? {
+            if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
+                if key.code == crossterm::event::KeyCode::Char('q') {
+                    break;
+                }
             }
-            Message::Exit => window::close(),
         }
     }
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen
+    )?;
+    terminal::disable_raw_mode()?;
+    terminal.show_cursor()?;
+    Ok(())
+}
 
-    fn view(&self) -> Element<Message> {
-        let burger_button = button(text("☰").size(30))
-            .on_press(Message::MenuToggled)
-            .padding(5);
-
-        let menu_bar = row![burger_button]
-            .spacing(10)
-            .align_items(alignment::Alignment::Center)
-            .width(Length::Fill);
-
-        let main_content = container(text("Hello, Jero!"))
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .center_x()
-            .center_y();
-
-        let mut content = column![menu_bar];
-
-        if self.menu_open {
-            let menu = column![
-                button("Home").width(Length::Fill),
-                button("About..").width(Length::Fill),
-                rule::Rule::horizontal(10),
-                button("Exit").width(Length::Fill).on_press(Message::Exit),
-            ]
-            .spacing(5)
-            .width(200)
-            .padding(10);
-
-            content = content.push(menu);
-        }
-
-        content = content.push(main_content);
-
-        container(content)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
-    }
+fn update_terminal_title(stdout: &mut std::io::Stdout) 
+    -> Result<(), Box<dyn Error + 'static>> 
+{
+    let pkg = env!("CARGO_PKG_NAME");
+    let pkg_version = env!("CARGO_PKG_VERSION");
+    let bin = env!("CARGO_BIN_NAME");
+    terminal::enable_raw_mode()?;
+    let _ = execute!(
+        stdout,
+        EnterAlternateScreen,
+        SetTitle(format!("{} v{} :: {}",pkg,pkg_version,bin))
+    )?;
+    Ok(())
 }
