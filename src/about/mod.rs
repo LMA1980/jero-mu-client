@@ -42,7 +42,7 @@ impl About {
     }
 }
 
-impl Widget for &mut About {
+impl Widget for &About {
     // Goal: render a block titled About, displaying the
     // package name, binary name and the package version.
     //

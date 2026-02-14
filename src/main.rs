@@ -16,7 +16,7 @@ pub fn main() -> io::Result<()> {
     let mut terminal = Terminal::new(backend)?;
     let about_widget = About::new(None);
     loop {
-        terminal.draw(|frame| frame.render_widget(&mut about_widget.clone(), frame.area()))?;
+        terminal.draw(|frame| frame.render_widget(&about_widget, frame.area()))?;
         // Handle events (e.g., exit on 'q' press)
         if crossterm::event::poll(std::time::Duration::from_millis(250))?
             && let crossterm::event::Event::Key(key) = crossterm::event::read()?
