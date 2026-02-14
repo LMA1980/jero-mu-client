@@ -1,9 +1,3 @@
-use ratatui_core::{
-    buffer::Buffer,
-    layout::Rect,
-    // text::Line,
-    widgets::Widget
-};
 use ratatui::{
     // Frame,
     // layout::{Constraint, Layout, Rect},
@@ -11,10 +5,17 @@ use ratatui::{
     // text::{ Line, Span },
     widgets::{
         Block,
-        Borders
+        Borders,
         //BorderType,
     },
 };
+use ratatui_core::{
+    buffer::Buffer,
+    layout::Rect,
+    // text::Line,
+    widgets::Widget,
+};
+
 #[derive(Debug, Copy, Clone)]
 pub struct About {
     _about_bin: AboutBin,
@@ -30,7 +31,7 @@ pub struct AboutBin {
 impl About {
     pub fn new(value: Option<AboutBin>) -> Self {
         Self {
-            _about_bin: value.unwrap_or_else(|| { 
+            _about_bin: value.unwrap_or({
                 AboutBin {
                     _package_name: env!("CARGO_PKG_NAME"),
                     _package_version: env!("CARGO_PKG_VERSION"),
@@ -60,8 +61,6 @@ impl Widget for &mut About {
         let bin = env!("CARGO_BIN_NAME");
 
         let _about_line = format!("{} v{} :: {}", pkg, pkg_version, bin);
-        let _about_block = Block::default()
-            .title("About")
-            .borders(Borders::ALL);
+        let _about_block = Block::default().title("About").borders(Borders::ALL);
     }
 }
